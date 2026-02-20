@@ -9,3 +9,4 @@ gunicorn==23.0.0
 httpx==0.28.1
 aiohttp==3.11.12
 requests==2.32.3
+qrcode==7.4.2
