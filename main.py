@@ -553,34 +553,113 @@ async def firebase_admin_login(request: Request):
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 # ============== СТАРЫЕ РОУТЫ АВТОРИЗАЦИИ ==============
+# @app.post("/auth/login", tags=["Auth"])
+# async def login(credentials: UserLogin):
+#     try:
+#         users_ref = db.collection("users").where("login", "==", credentials.login).get()
+#         if not users_ref:
+#             raise HTTPException(status_code=401, detail="Неверный логин или пароль")
+        
+#         user = users_ref[0]
+#         user_data = user.to_dict()
+        
+#         if user_data.get("password") != credentials.password:
+#             raise HTTPException(status_code=401, detail="Неверный логин или пароль")
+        
+#         if user_data.get("isCompleted"):
+#             return {
+#                 "success": True,
+#                 "userId": user.id,
+#                 "login": user_data.get("login"),
+#                 "isCompleted": True,
+#                 "message": "Вы уже прошли тестирование"
+#             }
+        
+#         return {
+#             "success": True,
+#             "userId": user.id,
+#             "login": user_data.get("login"),
+#             "isCompleted": False
+#         }
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         logger.error(f"❌ Ошибка авторизации: {e}")
+#         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
 @app.post("/auth/login", tags=["Auth"])
 async def login(credentials: UserLogin):
     try:
-        users_ref = db.collection("users").where("login", "==", credentials.login).get()
+        logger.info(f"🔐 Попытка входа: login='{credentials.login}'")
+        
+        # Получаем текущий активный поток
+        batch_ref = db.collection("batches").document("current")
+        batch_data = batch_ref.get()
+        current_batch = batch_data.to_dict().get("batchNumber", 1) if batch_data.exists else 1
+        
+        logger.info(f"📊 Текущий поток: {current_batch}")
+        
+        # Ищем пользователя с таким логином И в текущем потоке
+        users_ref = db.collection("users")\
+            .where("login", "==", credentials.login)\
+            .where("batch", "==", current_batch)\
+            .get()
+        
+        logger.info(f"📊 Найдено пользователей в потоке {current_batch}: {len(users_ref)}")
+        
         if not users_ref:
-            raise HTTPException(status_code=401, detail="Неверный логин или пароль")
-        
-        user = users_ref[0]
-        user_data = user.to_dict()
-        
-        if user_data.get("password") != credentials.password:
-            raise HTTPException(status_code=401, detail="Неверный логин или пароль")
-        
-        if user_data.get("isCompleted"):
-            return {
-                "success": True,
-                "userId": user.id,
-                "login": user_data.get("login"),
-                "isCompleted": True,
-                "message": "Вы уже прошли тестирование"
+            # Если не нашли в текущем потоке, пробуем найти в любом (для старых пользователей)
+            logger.info(f"📊 Пользователь не найден в потоке {current_batch}, ищем во всех...")
+            users_ref = db.collection("users").where("login", "==", credentials.login).get()
+            
+            if not users_ref:
+                raise HTTPException(status_code=401, detail="Неверный логин или пароль")
+            
+            logger.info(f"📊 Найдено пользователей всего: {len(users_ref)}")
+            
+            # Если несколько - берем последнего по дате
+            users_list = []
+            for user_doc in users_ref:
+                user_data = user_doc.to_dict()
+                created_at = user_data.get("createdAt")
+                users_list.append({
+                    "id": user_doc.id,
+                    "data": user_data,
+                    "createdAt": created_at,
+                    "batch": user_data.get("batch")
+                })
+            
+            users_list.sort(key=lambda x: x.get("createdAt") or datetime.min, reverse=True)
+            latest_user = users_list[0]
+            logger.info(f"👤 Выбран пользователь из потока {latest_user['batch']}")
+        else:
+            # Нашли в текущем потоке
+            user_doc = users_ref[0]
+            latest_user = {
+                "id": user_doc.id,
+                "data": user_doc.to_dict()
             }
+        
+        user_id = latest_user["id"]
+        user_data = latest_user["data"]
+        
+        # Проверка пароля
+        stored_password = user_data.get("password")
+        
+        if stored_password != credentials.password:
+            logger.warning(f"❌ Неверный пароль для {credentials.login}")
+            raise HTTPException(status_code=401, detail="Неверный логин или пароль")
+        
+        # Остальной код...
         
         return {
             "success": True,
-            "userId": user.id,
+            "userId": user_id,
             "login": user_data.get("login"),
-            "isCompleted": False
+            "isCompleted": user_data.get("isCompleted", False),
+            "batch": user_data.get("batch")  # Добавим batch в ответ
         }
+        
     except HTTPException:
         raise
     except Exception as e:
