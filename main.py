@@ -692,22 +692,58 @@ async def admin_login(credentials: UserLogin):
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 # ============== ОПЛАТА ==============
+# @app.post("/payment/create-order", tags=["Payment"])
+# async def create_payment_order(request: Request):
+#     try:
+#         data = await request.json()
+#         amount = data.get('amount', 1000)
+#         test_count = data.get('count', 1)
+        
+#         order_id = str(uuid.uuid4())
+        
+#         db.collection("payments").document(order_id).set({
+#             "orderId": order_id,
+#             "amount": amount,
+#             "testCount": test_count,
+#             "status": "pending",
+#             "createdAt": datetime.now(),
+#             "users": []
+#         })
+        
+#         qr_code = generate_test_qr(amount, order_id)
+        
+#         return {
+#             "success": True,
+#             "orderId": order_id,
+#             "qrCode": qr_code,
+#             "amount": amount,
+#             "testCount": test_count
+#         }
+        
+#     except Exception as e:
+#         logger.error(f"❌ Ошибка создания заказа: {e}")
+#         raise HTTPException(status_code=500, detail=str(e))
 @app.post("/payment/create-order", tags=["Payment"])
 async def create_payment_order(request: Request):
     try:
         data = await request.json()
         amount = data.get('amount', 1000)
         test_count = data.get('count', 1)
+        buyer_user_id = data.get('userId')  # 👈 ПОЛУЧАЕМ ID ПОКУПАТЕЛЯ
+        
+        logger.info(f"💳 Создание заказа: amount={amount}, count={test_count}, buyer={buyer_user_id}")
         
         order_id = str(uuid.uuid4())
         
+        # Сохраняем в Firebase с информацией о покупателе
         db.collection("payments").document(order_id).set({
             "orderId": order_id,
             "amount": amount,
             "testCount": test_count,
             "status": "pending",
             "createdAt": datetime.now(),
-            "users": []
+            "users": [],
+            "buyerUserId": buyer_user_id  # 👈 СОХРАНЯЕМ КТО КУПИЛ
         })
         
         qr_code = generate_test_qr(amount, order_id)
@@ -724,6 +760,77 @@ async def create_payment_order(request: Request):
         logger.error(f"❌ Ошибка создания заказа: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# @app.post("/payment/check/{order_id}", tags=["Payment"])
+# async def check_payment(order_id: str):
+#     try:
+#         payment_ref = db.collection("payments").document(order_id).get()
+        
+#         if not payment_ref.exists:
+#             raise HTTPException(status_code=404, detail="Заказ не найден")
+        
+#         payment_data = payment_ref.to_dict()
+#         current_status = payment_data.get("status", "pending")
+        
+#         if current_status == "pending":
+#             db.collection("payments").document(order_id).update({
+#                 "status": "paid",
+#                 "paidAt": datetime.now()
+#             })
+            
+#             users = generate_users_after_payment(payment_data.get("testCount", 1))
+            
+#             batch = db.batch()
+#             generated_users = []
+            
+#             # Получаем текущий номер потока
+#             batch_ref = db.collection("batches").document("current")
+#             batch_data = batch_ref.get()
+#             if batch_data.exists:
+#                 current_batch = batch_data.to_dict().get("batchNumber", 1)
+#             else:
+#                 current_batch = 1
+            
+#             for user_data in users:
+#                 user_ref = db.collection("users").document()
+#                 user_data_db = {
+#                     "login": user_data["login"],
+#                     "password": user_data["password"],
+#                     "isCompleted": False,
+#                     "completedAt": None,
+#                     "createdAt": datetime.now(),
+#                     "userId": user_ref.id,
+#                     "paymentId": order_id,
+#                     "batch": current_batch
+#                 }
+#                 batch.set(user_ref, user_data_db)
+#                 generated_users.append({
+#                     "login": user_data["login"],
+#                     "password": user_data["password"]
+#                 })
+            
+#             batch.commit()
+            
+#             db.collection("payments").document(order_id).update({
+#                 "users": generated_users,
+#                 "status": "completed"
+#             })
+            
+#             return {
+#                 "success": True,
+#                 "status": "paid",
+#                 "paid": True,
+#                 "users": generated_users
+#             }
+        
+#         return {
+#             "success": True,
+#             "status": current_status,
+#             "paid": current_status == "paid"
+#         }
+        
+#     except Exception as e:
+#         logger.error(f"❌ Ошибка проверки оплаты: {e}")
+#         raise HTTPException(status_code=500, detail=str(e))
 @app.post("/payment/check/{order_id}", tags=["Payment"])
 async def check_payment(order_id: str):
     try:
@@ -734,8 +841,10 @@ async def check_payment(order_id: str):
         
         payment_data = payment_ref.to_dict()
         current_status = payment_data.get("status", "pending")
+        buyer_user_id = payment_data.get("buyerUserId")  # 👈 КТО КУПИЛ
         
         if current_status == "pending":
+            # Имитация оплаты (для теста)
             db.collection("payments").document(order_id).update({
                 "status": "paid",
                 "paidAt": datetime.now()
@@ -764,10 +873,12 @@ async def check_payment(order_id: str):
                     "createdAt": datetime.now(),
                     "userId": user_ref.id,
                     "paymentId": order_id,
-                    "batch": current_batch
+                    "batch": current_batch,
+                    "purchasedBy": buyer_user_id  # 👈 КТО КУПИЛ (ОЧЕНЬ ВАЖНО!)
                 }
                 batch.set(user_ref, user_data_db)
                 generated_users.append({
+                    "userId": user_ref.id,  # 👈 ДОБАВЛЯЕМ userId
                     "login": user_data["login"],
                     "password": user_data["password"]
                 })
@@ -1200,32 +1311,60 @@ async def get_user_profile(user_id: str):
         logger.error(f"❌ Ошибка получения профиля: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# @app.get("/user/accesses/{user_id}", tags=["User"])
+# async def get_user_accesses(user_id: str):
+#     """Получение всех логинов/паролей пользователя (если покупал несколько)"""
+#     try:
+#         # Ищем все аккаунты, связанные с этим пользователем по email или firebaseUid
+#         user_ref = db.collection("users").document(user_id).get()
+#         if not user_ref.exists:
+#             raise HTTPException(status_code=404, detail="Пользователь не найден")
+        
+#         user_data = user_ref.to_dict()
+#         firebase_uid = user_data.get("firebaseUid")
+        
+#         # Ищем все аккаунты с этим же firebaseUid
+#         accesses = []
+#         if firebase_uid:
+#             accounts = db.collection("users").where("firebaseUid", "==", firebase_uid).get()
+#             for acc in accounts:
+#                 acc_data = acc.to_dict()
+#                 accesses.append({
+#                     "userId": acc.id,
+#                     "login": acc_data.get("login"),
+#                     "password": acc_data.get("password"),
+#                     "isCompleted": acc_data.get("isCompleted"),
+#                     "completedAt": acc_data.get("completedAt"),
+#                     "paymentId": acc_data.get("paymentId")
+#                 })
+        
+#         return {"accesses": accesses}
+        
+#     except Exception as e:
+#         logger.error(f"❌ Ошибка получения доступов: {e}")
+#         raise HTTPException(status_code=500, detail=str(e))
 @app.get("/user/accesses/{user_id}", tags=["User"])
 async def get_user_accesses(user_id: str):
-    """Получение всех логинов/паролей пользователя (если покупал несколько)"""
+    """Получение всех логинов/паролей, купленных пользователем"""
     try:
-        # Ищем все аккаунты, связанные с этим пользователем по email или firebaseUid
-        user_ref = db.collection("users").document(user_id).get()
-        if not user_ref.exists:
-            raise HTTPException(status_code=404, detail="Пользователь не найден")
+        logger.info(f"🔑 Запрос доступов для пользователя: {user_id}")
         
-        user_data = user_ref.to_dict()
-        firebase_uid = user_data.get("firebaseUid")
+        # Ищем все аккаунты, купленные этим пользователем
+        accounts = db.collection("users").where("purchasedBy", "==", user_id).get()
         
-        # Ищем все аккаунты с этим же firebaseUid
+        logger.info(f"📊 Найдено доступов: {len(accounts)}")
+        
         accesses = []
-        if firebase_uid:
-            accounts = db.collection("users").where("firebaseUid", "==", firebase_uid).get()
-            for acc in accounts:
-                acc_data = acc.to_dict()
-                accesses.append({
-                    "userId": acc.id,
-                    "login": acc_data.get("login"),
-                    "password": acc_data.get("password"),
-                    "isCompleted": acc_data.get("isCompleted"),
-                    "completedAt": acc_data.get("completedAt"),
-                    "paymentId": acc_data.get("paymentId")
-                })
+        for acc in accounts:
+            acc_data = acc.to_dict()
+            accesses.append({
+                "userId": acc.id,
+                "login": acc_data.get("login"),
+                "password": acc_data.get("password"),
+                "isCompleted": acc_data.get("isCompleted", False),
+                "completedAt": acc_data.get("completedAt"),
+                "paymentId": acc_data.get("paymentId")
+            })
         
         return {"accesses": accesses}
         
