@@ -304,9 +304,19 @@
 #     return "рекомендован"
 from typing import List, Dict, Any, Optional
 import logging
-from models import ScaleType, SCALE_MAX_SCORES
+from models import ScaleType
 
 logger = logging.getLogger(__name__)
+
+# Максимальные баллы по шкалам (дублируем здесь, чтобы избежать проблем с импортом)
+SCALE_MAX_SCORES = {
+    "Isk": 17,
+    "Con": 14,
+    "Ast": 19,
+    "Ist": 30,
+    "Psi": 30,
+    "NPN": 67,
+}
 
 # Инвертированные вопросы (красные в Excel)
 INVERTED_QUESTIONS = {35, 42, 43, 71, 110, 153, 157}
@@ -495,7 +505,6 @@ def calculate_score(answers: List[Dict], questions_map: Dict[int, Dict]) -> Dict
             
         scale_map = QUESTION_SCALES[q_num]
         
-        # 👇 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: 
         # Для красных вопросов: НЕТ = 1, ДА = 0
         # Для обычных: ДА = 1, НЕТ = 0
         if q_num in INVERTED_QUESTIONS:
@@ -508,23 +517,17 @@ def calculate_score(answers: List[Dict], questions_map: Dict[int, Dict]) -> Dict
                 if scale == "Isk" and q_num == 1:
                     continue
                 scores[scale] += score
-                logger.debug(f"    ✅ +{score} к {scale}, теперь {scores[scale]}")
     
     logger.info(f"📈 ИТОГОВЫЕ БАЛЛЫ:")
     for scale in ["Isk", "Con", "Ast", "Ist", "Psi", "NPN"]:
-        logger.info(f"  {scale}: {scores[scale]}/{SCALE_MAX_SCORES[ScaleType[scale]]}")
+        logger.info(f"  {scale}: {scores[scale]}/{SCALE_MAX_SCORES[scale]}")
     
     return scores
-
-# Остальные функции (get_interpretation, get_recommendation) без изменений
-
 
 def get_interpretation(scale: str, score: int) -> str:
     """
     Интерпретация результатов ПО ТЗ И EXCEL
-    Формат: "норма (X)", "условно рекомендован (X)", "не рекомендован (X)", "ретест"
     """
-    
     if scale == "Isk":  # Достоверность
         if score <= 6:
             return f"норма ({score} из 15)"
@@ -567,13 +570,10 @@ def get_interpretation(scale: str, score: int) -> str:
     
     return f"{score} баллов"
 
-
 def get_recommendation(scores: Dict[str, int]) -> str:
     """
     Итоговая рекомендация на основе всех шкал
-    Приоритет: нерекомендован > ретест > условно > рекомендован
     """
-    
     isk_score = scores.get("Isk", 0)
     con_score = scores.get("Con", 0)
     npn_score = scores.get("NPN", 0)
