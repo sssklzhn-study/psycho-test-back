@@ -308,7 +308,7 @@ from models import ScaleType
 
 logger = logging.getLogger(__name__)
 
-# Максимальные баллы по шкалам (дублируем здесь, чтобы избежать проблем с импортом)
+# Максимальные баллы по шкалам
 SCALE_MAX_SCORES = {
     "Isk": 17,
     "Con": 14,
@@ -318,177 +318,17 @@ SCALE_MAX_SCORES = {
     "NPN": 67,
 }
 
-# Инвертированные вопросы (красные в Excel)
-INVERTED_QUESTIONS = {35, 42, 43, 71, 110, 153, 157}
-
 # Вопрос 1 НЕ УЧИТЫВАЕТСЯ в Isk
 ISK_SKIP_QUESTION_1 = True
 
-QUESTION_SCALES = {
-    1:  {"Isk": 1, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    2:  {"Isk": 1, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    3:  {"Isk": 0, "Con": 0, "Ast": 1, "Ist": 0, "Psi": 0, "NPN": 0},
-    4:  {"Isk": 0, "Con": 1, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 1},
-    5:  {"Isk": 0, "Con": 0, "Ast": 1, "Ist": 0, "Psi": 0, "NPN": 0},
-    6:  {"Isk": 1, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    7:  {"Isk": 0, "Con": 0, "Ast": 1, "Ist": 0, "Psi": 0, "NPN": 0},
-    8:  {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    9:  {"Isk": 0, "Con": 0, "Ast": 1, "Ist": 0, "Psi": 0, "NPN": 0},
-    10: {"Isk": 0, "Con": 0, "Ast": 1, "Ist": 0, "Psi": 0, "NPN": 1},
-    11: {"Isk": 1, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    12: {"Isk": 0, "Con": 0, "Ast": 1, "Ist": 0, "Psi": 0, "NPN": 0},
-    13: {"Isk": 0, "Con": 0, "Ast": 1, "Ist": 0, "Psi": 0, "NPN": 0},
-    14: {"Isk": 0, "Con": 0, "Ast": 1, "Ist": 0, "Psi": 0, "NPN": 0},
-    15: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    16: {"Isk": 0, "Con": 0, "Ast": 1, "Ist": 0, "Psi": 0, "NPN": 0},
-    17: {"Isk": 0, "Con": 0, "Ast": 1, "Ist": 0, "Psi": 0, "NPN": 0},
-    18: {"Isk": 1, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    19: {"Isk": 1, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    20: {"Isk": 0, "Con": 1, "Ast": 1, "Ist": 0, "Psi": 0, "NPN": 1},
-    21: {"Isk": 0, "Con": 0, "Ast": 1, "Ist": 0, "Psi": 0, "NPN": 0},
-    22: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    23: {"Isk": 1, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    24: {"Isk": 0, "Con": 0, "Ast": 1, "Ist": 0, "Psi": 0, "NPN": 0},
-    25: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    26: {"Isk": 1, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    27: {"Isk": 1, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    28: {"Isk": 0, "Con": 0, "Ast": 1, "Ist": 0, "Psi": 0, "NPN": 0},
-    29: {"Isk": 0, "Con": 0, "Ast": 1, "Ist": 0, "Psi": 0, "NPN": 0},
-    30: {"Isk": 0, "Con": 1, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    31: {"Isk": 1, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    32: {"Isk": 0, "Con": 0, "Ast": 1, "Ist": 0, "Psi": 0, "NPN": 1},
-    33: {"Isk": 0, "Con": 0, "Ast": 1, "Ist": 0, "Psi": 0, "NPN": 1},
-    34: {"Isk": 1, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    35: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    36: {"Isk": 0, "Con": 1, "Ast": 1, "Ist": 0, "Psi": 0, "NPN": 1},
-    37: {"Isk": 0, "Con": 0, "Ast": 1, "Ist": 0, "Psi": 0, "NPN": 1},
-    38: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    39: {"Isk": 1, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    40: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    41: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    42: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    43: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    44: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    45: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    46: {"Isk": 1, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    47: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    48: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    49: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    50: {"Isk": 0, "Con": 1, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    51: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    52: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    53: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    54: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    55: {"Isk": 1, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    56: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    57: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    58: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    59: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    60: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 1},
-    61: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    62: {"Isk": 1, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    63: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    64: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    65: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    66: {"Isk": 1, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    67: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    68: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    69: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    70: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    71: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    72: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    73: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    74: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    75: {"Isk": 0, "Con": 1, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    76: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    77: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    78: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    79: {"Isk": 1, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    80: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    81: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    82: {"Isk": 0, "Con": 1, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    83: {"Isk": 0, "Con": 1, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    84: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    85: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    86: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    87: {"Isk": 0, "Con": 1, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    88: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    89: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    90: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    91: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    92: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    93: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    94: {"Isk": 0, "Con": 1, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    95: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    96: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    97: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 1, "Psi": 0, "NPN": 0},
-    98: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    99: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    100: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 0},
-    101: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 0},
-    102: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    103: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    104: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 0},
-    105: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 0},
-    106: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    107: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    108: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 0},
-    109: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 0},
-    110: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    111: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    112: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 0},
-    113: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 0},
-    114: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    115: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    116: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 0},
-    117: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 0},
-    118: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    119: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    120: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 0},
-    121: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 0},
-    122: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    123: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    124: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 0},
-    125: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 1},
-    126: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    127: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    128: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 1},
-    129: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 1},
-    130: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    131: {"Isk": 0, "Con": 1, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    132: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 0},
-    133: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 1},
-    134: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    135: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    136: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 1},
-    137: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 1},
-    138: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 1},
-    139: {"Isk": 0, "Con": 1, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    140: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    141: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 0},
-    142: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 0},
-    143: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    144: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    145: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 1},
-    146: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 1},
-    147: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    148: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    149: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 0},
-    150: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 0},
-    151: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    152: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    153: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 0},
-    154: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 1},
-    155: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    156: {"Isk": 0, "Con": 1, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    157: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 1, "NPN": 0},
-    158: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-    159: {"Isk": 0, "Con": 1, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 1},
-    160: {"Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0},
-}
-
 def calculate_score(answers: List[Dict], questions_map: Dict[int, Dict]) -> Dict[str, int]:
-    """ТОЧНЫЙ ПОДСЧЕТ ПО МЕТОДИКЕ EXCEL"""
+    """
+    ТОЧНЫЙ ПОДСЧЕТ ПО МЕТОДИКЕ EXCEL С ИСПОЛЬЗОВАНИЕМ ДАННЫХ ИЗ БД
+    
+    Args:
+        answers: список ответов [{"question_number": 1, "answer": True/False}, ...]
+        questions_map: словарь вопросов {номер_вопроса: данные_вопроса} из БД
+    """
     
     scores = {
         "Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0
@@ -500,23 +340,35 @@ def calculate_score(answers: List[Dict], questions_map: Dict[int, Dict]) -> Dict
         q_num = answer_item["question_number"]
         answer_bool = answer_item["answer"]
         
-        if q_num not in QUESTION_SCALES:
+        # Получаем данные вопроса из БД
+        q_data = questions_map.get(q_num)
+        if not q_data:
+            logger.warning(f"⚠️ Вопрос {q_num} не найден в БД, пропускаем")
             continue
-            
-        scale_map = QUESTION_SCALES[q_num]
         
-        # Для красных вопросов: НЕТ = 1, ДА = 0
-        # Для обычных: ДА = 1, НЕТ = 0
-        if q_num in INVERTED_QUESTIONS:
-            score = 0 if answer_bool else 1
-        else:
-            score = 1 if answer_bool else 0
+        # Получаем типы шкал из БД
+        types = q_data.get('types', [])
+        if not types:
+            logger.debug(f"ℹ️ Вопрос {q_num} не относится ни к одной шкале")
+            continue
         
-        for scale, belongs in scale_map.items():
-            if belongs == 1:
-                if scale == "Isk" and q_num == 1:
-                    continue
-                scores[scale] += score
+        # Получаем баллы за ответ из БД
+        if answer_bool:  # ответ Да
+            score = q_data.get('pointsIfYes', 0)
+            logger.debug(f"  Вопрос {q_num}: ответ ДА, балл={score}")
+        else:  # ответ Нет
+            score = q_data.get('pointsIfNo', 0)
+            logger.debug(f"  Вопрос {q_num}: ответ НЕТ, балл={score}")
+        
+        # Добавляем баллы во все шкалы, к которым относится вопрос
+        for scale in types:
+            # Особый случай: вопрос 1 не учитывается в Isk
+            if scale == "Isk" and q_num == 1:
+                logger.debug(f"    🚫 Пропускаем вопрос 1 для Isk (по методике)")
+                continue
+                
+            scores[scale] += score
+            logger.debug(f"    ✅ +{score} к {scale}, теперь {scores[scale]}")
     
     logger.info(f"📈 ИТОГОВЫЕ БАЛЛЫ:")
     for scale in ["Isk", "Con", "Ast", "Ist", "Psi", "NPN"]:
