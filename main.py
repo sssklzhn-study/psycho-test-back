@@ -21,8 +21,8 @@ from scoring import (
     calculate_score, 
     get_interpretation, 
     get_recommendation, 
-    QUESTION_SCALES,
-    INVERTED_QUESTIONS
+    # QUESTION_SCALES,
+    # INVERTED_QUESTIONS
 )
 
 
@@ -1413,46 +1413,72 @@ async def get_user_answers(user_id: str):
         logger.error(f"❌ Ошибка получения ответов: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 # ============== ЗАГРУЗКА ВОПРОСОВ ==============
+# @app.post("/admin/load-questions", tags=["Admin"])
+# async def load_questions_from_excel():
+#     try:
+#         questions_ref = db.collection("questions")
+#         old_questions = questions_ref.get()
+#         batch = db.batch()
+#         for q in old_questions:
+#             batch.delete(q.reference)
+#         batch.commit()
+        
+#         batch = db.batch()
+#         questions_list = []
+        
+#         question_texts = {
+#             1: "Иногда мне в голову приходят такие мысли, что лучше никому о них не рассказывать.",
+#             2: "Я охотно принимаю участие во всех собраниях и других общественных мероприятиях.",
+#         }
+        
+#         for q_num in range(1, 161):
+#             if q_num in QUESTION_SCALES:
+#                 scale_map = QUESTION_SCALES[q_num]
+#                 types = [scale for scale, val in scale_map.items() if val == 1]
+                
+#                 q_ref = questions_ref.document(f"q_{q_num}")
+#                 q_data = {
+#                     "number": q_num,
+#                     "text": question_texts.get(q_num, f"Вопрос {q_num}"),
+#                     "types": types,
+#                     "is_inverted": q_num in INVERTED_QUESTIONS,
+#                     "pointsIfYes": 0 if q_num in INVERTED_QUESTIONS else 1,
+#                     "pointsIfNo": 1 if q_num in INVERTED_QUESTIONS else 0,
+#                     "created_at": datetime.now()
+#                 }
+                
+#                 batch.set(q_ref, q_data)
+#                 questions_list.append(q_data)
+        
+#         batch.commit()
+#         logger.info(f"✅ Загружено {len(questions_list)} вопросов")
+#         return {"success": True, "count": len(questions_list)}
+#     except Exception as e:
+#         logger.error(f"❌ Ошибка загрузки вопросов: {e}")
+#         raise HTTPException(status_code=500, detail=str(e))
+# ============== ЗАГРУЗКА ВОПРОСОВ ==============
 @app.post("/admin/load-questions", tags=["Admin"])
 async def load_questions_from_excel():
+    """
+    Загрузка вопросов из Excel в Firebase
+    ВНИМАНИЕ: Эта функция использует данные из load_bilingual_questions.py
+    """
     try:
-        questions_ref = db.collection("questions")
-        old_questions = questions_ref.get()
-        batch = db.batch()
-        for q in old_questions:
-            batch.delete(q.reference)
-        batch.commit()
+        # Просто вызываем существующий скрипт
+        import subprocess
+        import sys
         
-        batch = db.batch()
-        questions_list = []
+        result = subprocess.run([sys.executable, "load_bilingual_questions.py"], 
+                               capture_output=True, text=True)
         
-        question_texts = {
-            1: "Иногда мне в голову приходят такие мысли, что лучше никому о них не рассказывать.",
-            2: "Я охотно принимаю участие во всех собраниях и других общественных мероприятиях.",
-        }
-        
-        for q_num in range(1, 161):
-            if q_num in QUESTION_SCALES:
-                scale_map = QUESTION_SCALES[q_num]
-                types = [scale for scale, val in scale_map.items() if val == 1]
-                
-                q_ref = questions_ref.document(f"q_{q_num}")
-                q_data = {
-                    "number": q_num,
-                    "text": question_texts.get(q_num, f"Вопрос {q_num}"),
-                    "types": types,
-                    "is_inverted": q_num in INVERTED_QUESTIONS,
-                    "pointsIfYes": 0 if q_num in INVERTED_QUESTIONS else 1,
-                    "pointsIfNo": 1 if q_num in INVERTED_QUESTIONS else 0,
-                    "created_at": datetime.now()
-                }
-                
-                batch.set(q_ref, q_data)
-                questions_list.append(q_data)
-        
-        batch.commit()
-        logger.info(f"✅ Загружено {len(questions_list)} вопросов")
-        return {"success": True, "count": len(questions_list)}
+        if result.returncode == 0:
+            logger.info(f"✅ Вопросы успешно загружены")
+            logger.info(f"📋 Вывод: {result.stdout}")
+            return {"success": True, "message": "Вопросы загружены", "output": result.stdout}
+        else:
+            logger.error(f"❌ Ошибка загрузки: {result.stderr}")
+            raise HTTPException(status_code=500, detail=result.stderr)
+            
     except Exception as e:
         logger.error(f"❌ Ошибка загрузки вопросов: {e}")
         raise HTTPException(status_code=500, detail=str(e))
