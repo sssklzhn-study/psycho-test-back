@@ -1062,21 +1062,21 @@ async def submit_test(test_data: TestSubmit, request: Request):
             raise HTTPException(status_code=400, detail="Тест уже пройден")
         
         # ============== СОХРАНЕНИЕ ОТВЕТОВ ==============
-        # Получаем ссылку на подколлекцию answers
         answers_ref = db.collection("users").document(user_id).collection("answers")
         batch = db.batch()
         
         # Загружаем все вопросы для быстрого доступа
         questions_ref = db.collection("questions").get()
         questions_dict = {}
+        questions_by_number = {}  # 👈 ДОБАВЛЯЕМ ОТДЕЛЬНЫЙ СЛОВАРЬ ПО НОМЕРАМ
+        
         for q in questions_ref:
             q_data = q.to_dict()
             questions_dict[q.id] = q_data
-            questions_dict[q_data.get('number')] = q_data  # Также по номеру
+            questions_by_number[q_data.get('number')] = q_data  # По номеру
 
         saved_count = 0
         for answer in test_data.answers:
-            # Создаем новый документ в подколлекции answers
             answer_doc = answers_ref.document()
             
             # Получаем данные вопроса
@@ -1091,42 +1091,38 @@ async def submit_test(test_data: TestSubmit, request: Request):
                 points = question_data.get('pointsIfNo', 0)
                 answer_text = "Нет"
             
-            # Данные для сохранения
             answer_data = {
                 "questionId": answer.question_id,
                 "questionNumber": q_number,
-                "answer": answer.answer,          # true/false
-                "answerText": answer_text,        # "Да"/"Нет"
-                "points": points,                  # баллы за ответ
-                "submittedAt": datetime.now()      # время ответа
+                "answer": answer.answer,
+                "answerText": answer_text,
+                "points": points,
+                "submittedAt": datetime.now()
             }
             
-            # Добавляем в batch
             batch.set(answer_doc, answer_data)
             saved_count += 1
         
-        # Сохраняем все ответы одной транзакцией
         batch.commit()
         logger.info(f"✅ Сохранено {saved_count} ответов в коллекцию answers")
         
         # ============== ПОДСЧЕТ БАЛЛОВ ==============
-        # ============== ПОДСЧЕТ БАЛЛОВ ==============
-answers_for_scoring = []
-for answer in test_data.answers:
-    question_data = questions_dict.get(answer.question_id, {})
-    q_number = question_data.get("number", 0)
-    
-    answers_for_scoring.append({
-        "question_number": q_number,
-        "answer": answer.answer
-    })
-
-#ВАЖНО: ПЕРЕДАТЬ questions_map = questions_dict
-scores = calculate_score(answers_for_scoring, questions_dict)  # ИСПРАВЛЕНО
-
-interpretations = {}
-for scale in ["Isk", "Con", "Ast", "Ist", "Psi", "NPN"]:
-    interpretations[scale] = get_interpretation(scale, scores.get(scale, 0))
+        answers_for_scoring = []
+        for answer in test_data.answers:
+            question_data = questions_dict.get(answer.question_id, {})
+            q_number = question_data.get("number", 0)
+            
+            answers_for_scoring.append({
+                "question_number": q_number,
+                "answer": answer.answer
+            })
+        
+        # 👇 ВАЖНО: ПЕРЕДАЕМ questions_by_number (словарь по номерам)
+        scores = calculate_score(answers_for_scoring, questions_by_number)
+        
+        interpretations = {}
+        for scale in ["Isk", "Con", "Ast", "Ist", "Psi", "NPN"]:
+            interpretations[scale] = get_interpretation(scale, scores.get(scale, 0))
         
         recommendation = get_recommendation(scores)
         
@@ -1142,7 +1138,6 @@ for scale in ["Isk", "Con", "Ast", "Ist", "Psi", "NPN"]:
         
         db.collection("results").document(user_id).set(result_data)
         
-        # Обновляем статус пользователя
         db.collection("users").document(user_id).update({
             "isCompleted": True,
             "completedAt": datetime.now()
