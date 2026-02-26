@@ -1110,21 +1110,23 @@ async def submit_test(test_data: TestSubmit, request: Request):
         logger.info(f"✅ Сохранено {saved_count} ответов в коллекцию answers")
         
         # ============== ПОДСЧЕТ БАЛЛОВ ==============
-        answers_for_scoring = []
-        for answer in test_data.answers:
-            question_data = questions_dict.get(answer.question_id, {})
-            q_number = question_data.get("number", 0)
-            
-            answers_for_scoring.append({
-                "question_number": q_number,
-                "answer": answer.answer
-            })
-        
-        scores = calculate_score(answers_for_scoring, {})
-        
-        interpretations = {}
-        for scale in ["Isk", "Con", "Ast", "Ist", "Psi", "NPN"]:
-            interpretations[scale] = get_interpretation(scale, scores.get(scale, 0))
+        # ============== ПОДСЧЕТ БАЛЛОВ ==============
+answers_for_scoring = []
+for answer in test_data.answers:
+    question_data = questions_dict.get(answer.question_id, {})
+    q_number = question_data.get("number", 0)
+    
+    answers_for_scoring.append({
+        "question_number": q_number,
+        "answer": answer.answer
+    })
+
+#ВАЖНО: ПЕРЕДАТЬ questions_map = questions_dict
+scores = calculate_score(answers_for_scoring, questions_dict)  # ИСПРАВЛЕНО
+
+interpretations = {}
+for scale in ["Isk", "Con", "Ast", "Ist", "Psi", "NPN"]:
+    interpretations[scale] = get_interpretation(scale, scores.get(scale, 0))
         
         recommendation = get_recommendation(scores)
         
