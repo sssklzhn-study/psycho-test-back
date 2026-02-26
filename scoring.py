@@ -301,8 +301,7 @@
 #     if (7 <= con_score <= 8) or (24 <= npn_score <= 30) or (ast_score > 15):
 #         return "условно рекомендован"
     
-#     return "рекомендован"
-from typing import List, Dict, Any, Optional
+#     return "рекомендован"from typing import List, Dict, Any, Optional
 import logging
 from models import ScaleType
 
@@ -324,10 +323,6 @@ ISK_SKIP_QUESTION_1 = True
 def calculate_score(answers: List[Dict], questions_map: Dict[int, Dict]) -> Dict[str, int]:
     """
     ТОЧНЫЙ ПОДСЧЕТ ПО МЕТОДИКЕ EXCEL С ИСПОЛЬЗОВАНИЕМ ДАННЫХ ИЗ БД
-    
-    Args:
-        answers: список ответов [{"question_number": 1, "answer": True/False}, ...]
-        questions_map: словарь вопросов {номер_вопроса: данные_вопроса} из БД
     """
     
     scores = {
@@ -335,6 +330,16 @@ def calculate_score(answers: List[Dict], questions_map: Dict[int, Dict]) -> Dict
     }
     
     logger.info(f"📊 НАЧАЛО ПОДСЧЕТА: получено {len(answers)} ответов")
+    logger.info(f"📚 questions_map содержит {len(questions_map)} вопросов")
+    
+    # Проверяем ключевые вопросы в БД
+    test_questions = [2, 35, 42, 43, 71, 110, 153, 157]
+    for q_num in test_questions:
+        if q_num in questions_map:
+            q_data = questions_map[q_num]
+            logger.info(f"📌 Вопрос {q_num}: types={q_data.get('types')}, pointsIfYes={q_data.get('pointsIfYes')}, pointsIfNo={q_data.get('pointsIfNo')}")
+        else:
+            logger.warning(f"⚠️ Вопрос {q_num} ОТСУТСТВУЕТ в questions_map!")
     
     for answer_item in answers:
         q_num = answer_item["question_number"]
@@ -355,10 +360,10 @@ def calculate_score(answers: List[Dict], questions_map: Dict[int, Dict]) -> Dict
         # Получаем баллы за ответ из БД
         if answer_bool:  # ответ Да
             score = q_data.get('pointsIfYes', 0)
-            logger.debug(f"  Вопрос {q_num}: ответ ДА, балл={score}")
+            logger.debug(f"  Вопрос {q_num}: ответ ДА, балл={score}, типы={types}")
         else:  # ответ Нет
             score = q_data.get('pointsIfNo', 0)
-            logger.debug(f"  Вопрос {q_num}: ответ НЕТ, балл={score}")
+            logger.debug(f"  Вопрос {q_num}: ответ НЕТ, балл={score}, типы={types}")
         
         # Добавляем баллы во все шкалы, к которым относится вопрос
         for scale in types:
