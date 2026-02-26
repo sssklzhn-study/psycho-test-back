@@ -302,6 +302,7 @@
 #         return "условно рекомендован"
     
 #     return "рекомендован"from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional
 import logging
 from models import ScaleType
 
