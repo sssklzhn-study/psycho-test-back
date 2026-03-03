@@ -386,11 +386,11 @@ def get_interpretation(scale: str, score: int) -> str:
     """
     Интерпретация результатов ПО ТЗ И EXCEL
     """
-    if scale == "Isk":  # Достоверность
-        if score <= 9:
-            return f"норма ({score} из 15)"
-        else:
-            return f"ретест ({score} из 15)"
+    if scale == "Isk":  # Достоверность (17 вопросов)
+    if score <= 9:
+        return f"норма ({score} из 17)"  # ✅ ДҰРЫС!
+    else:
+        return f"ретест ({score} из 17)"
     
     elif scale == "Con":  # Аутоагрессия
         if score <= 6:
@@ -418,7 +418,7 @@ def get_interpretation(scale: str, score: int) -> str:
         if score <= 27:
             return f"норма ({score} из 30)"
         else:
-            return f"не рекомендован ({score} из 30)"
+            return f"условно  рекомендован ({score} из 30)"
     
     elif scale == "Ast":  # Ранимость, чувствительность
         if score <= 15:
