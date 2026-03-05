@@ -302,6 +302,171 @@
 #         return "условно рекомендован"
     
 #     return "рекомендован"from typing import List, Dict, Any, Optional
+
+
+
+
+
+
+
+# from typing import List, Dict, Any, Optional
+# import logging
+# from models import ScaleType
+
+# logger = logging.getLogger(__name__)
+
+# # Максимальные баллы по шкалам
+# SCALE_MAX_SCORES = {
+#     "Isk": 17,
+#     "Con": 14,
+#     "Ast": 19,
+#     "Ist": 30,
+#     "Psi": 30,
+#     "NPN": 67,
+# }
+
+# # Вопрос 1 НЕ УЧИТЫВАЕТСЯ в Isk
+# ISK_SKIP_QUESTION_1 = True
+
+# def calculate_score(answers: List[Dict], questions_map: Dict[int, Dict]) -> Dict[str, int]:
+#     """
+#     ТОЧНЫЙ ПОДСЧЕТ ПО МЕТОДИКЕ EXCEL С ИСПОЛЬЗОВАНИЕМ ДАННЫХ ИЗ БД
+#     """
+    
+#     scores = {
+#         "Isk": 0, "Con": 0, "Ast": 0, "Ist": 0, "Psi": 0, "NPN": 0
+#     }
+    
+#     logger.info(f"📊 НАЧАЛО ПОДСЧЕТА: получено {len(answers)} ответов")
+#     logger.info(f"📚 questions_map содержит {len(questions_map)} вопросов")
+    
+#     # Проверяем ключевые вопросы в БД
+#     test_questions = [2, 35, 42, 43, 71, 110, 153, 157]
+#     for q_num in test_questions:
+#         if q_num in questions_map:
+#             q_data = questions_map[q_num]
+#             logger.info(f"📌 Вопрос {q_num}: types={q_data.get('types')}, pointsIfYes={q_data.get('pointsIfYes')}, pointsIfNo={q_data.get('pointsIfNo')}")
+#         else:
+#             logger.warning(f"⚠️ Вопрос {q_num} ОТСУТСТВУЕТ в questions_map!")
+    
+#     for answer_item in answers:
+#         q_num = answer_item["question_number"]
+#         answer_bool = answer_item["answer"]
+        
+#         # Получаем данные вопроса из БД
+#         q_data = questions_map.get(q_num)
+#         if not q_data:
+#             logger.warning(f"⚠️ Вопрос {q_num} не найден в БД, пропускаем")
+#             continue
+        
+#         # Получаем типы шкал из БД
+#         types = q_data.get('types', [])
+#         if not types:
+#             logger.debug(f"ℹ️ Вопрос {q_num} не относится ни к одной шкале")
+#             continue
+        
+#         # Получаем баллы за ответ из БД
+#         if answer_bool:  # ответ Да
+#             score = q_data.get('pointsIfYes', 0)
+#             logger.debug(f"  Вопрос {q_num}: ответ ДА, балл={score}, типы={types}")
+#         else:  # ответ Нет
+#             score = q_data.get('pointsIfNo', 0)
+#             logger.debug(f"  Вопрос {q_num}: ответ НЕТ, балл={score}, типы={types}")
+        
+#         # Добавляем баллы во все шкалы, к которым относится вопрос
+#         for scale in types:
+#             # Особый случай: вопрос 1 не учитывается в Isk
+#             if scale == "Isk" and q_num == 1:
+#                 logger.debug(f"    🚫 Пропускаем вопрос 1 для Isk (по методике)")
+#                 continue
+                
+#             scores[scale] += score
+#             logger.debug(f"    ✅ +{score} к {scale}, теперь {scores[scale]}")
+    
+#     logger.info(f"📈 ИТОГОВЫЕ БАЛЛЫ:")
+#     for scale in ["Isk", "Con", "Ast", "Ist", "Psi", "NPN"]:
+#         logger.info(f"  {scale}: {scores[scale]}/{SCALE_MAX_SCORES[scale]}")
+    
+#     return scores
+
+# def get_interpretation(scale: str, score: int) -> str:
+#     """
+#     Интерпретация результатов ПО ТЗ И EXCEL
+#     """
+#     if scale == "Isk":  # Достоверность (17 вопросов)
+#     if score <= 9:
+#         return f"норма ({score} из 17)"  # ✅ ДҰРЫС!
+#     else:
+#         return f"ретест ({score} из 17)"
+    
+#     elif scale == "Con":  # Аутоагрессия
+#         if score <= 6:
+#             return f"норма ({score} из 14)"
+#         elif score <= 8:
+#             return f"условно рекомендован ({score} из 14)"
+#         else:
+#             return f"не рекомендован ({score} из 14)"
+    
+#     elif scale == "NPN":  # Нервно-психическая устойчивость
+#         if score <= 23:
+#             return f"норма ({score} из 67)"
+#         elif score <= 30:
+#             return f"условно рекомендован ({score} из 67)"
+#         else:
+#             return f"не рекомендован ({score} из 67)"
+    
+#     elif scale == "Psi":  # Психопатическая реакция
+#         if score <= 13:
+#             return f"норма ({score} из 30)"
+#         else:
+#             return f"не рекомендован ({score} из 30)"
+    
+#     elif scale == "Ist":  # Истероидные проявления
+#         if score <= 27:
+#             return f"норма ({score} из 30)"
+#         else:
+#             return f"условно  рекомендован ({score} из 30)"
+    
+#     elif scale == "Ast":  # Ранимость, чувствительность
+#         if score <= 15:
+#             return f"норма ({score} из 19)"
+#         else:
+#             return f"условно рекомендован ({score} из 19)"
+    
+#     return f"{score} баллов"
+
+# def get_recommendation(scores: Dict[str, int]) -> str:
+#     """
+#     Итоговая рекомендация на основе всех шкал
+#     """
+#     isk_score = scores.get("Isk", 0)
+#     con_score = scores.get("Con", 0)
+#     npn_score = scores.get("NPN", 0)
+#     psi_score = scores.get("Psi", 0)
+#     ist_score = scores.get("Ist", 0)
+#     ast_score = scores.get("Ast", 0)
+    
+#     # Проверяем наихудший сценарий
+#     if con_score > 8 or npn_score > 30 or psi_score > 13 or ist_score > 27:
+#         return "не рекомендован"
+    
+#     if isk_score > 6:
+#         return "ретест"
+    
+#     if (7 <= con_score <= 8) or (24 <= npn_score <= 30) or (ast_score > 15):
+#         return "условно рекомендован"
+    
+#     return "рекомендован"
+
+
+
+
+
+
+
+
+
+
 from typing import List, Dict, Any, Optional
 import logging
 from models import ScaleType
@@ -387,10 +552,10 @@ def get_interpretation(scale: str, score: int) -> str:
     Интерпретация результатов ПО ТЗ И EXCEL
     """
     if scale == "Isk":  # Достоверность (17 вопросов)
-    if score <= 9:
-        return f"норма ({score} из 17)"  # ✅ ДҰРЫС!
-    else:
-        return f"ретест ({score} из 17)"
+        if score <= 9:
+            return f"норма ({score} из 17)"  # ✅ ДҰРЫС!
+        else:
+            return f"ретест ({score} из 17)"
     
     elif scale == "Con":  # Аутоагрессия
         if score <= 6:
@@ -418,7 +583,7 @@ def get_interpretation(scale: str, score: int) -> str:
         if score <= 27:
             return f"норма ({score} из 30)"
         else:
-            return f"условно  рекомендован ({score} из 30)"
+            return f"условно рекомендован ({score} из 30)"
     
     elif scale == "Ast":  # Ранимость, чувствительность
         if score <= 15:
